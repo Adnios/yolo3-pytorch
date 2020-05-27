@@ -1,0 +1,8 @@
+*.jpg
+*.avi
+*.xml
+*.pth
+*.png
+
+.idea/yolo3-pytorch.iml
+__pycache__/yolo.cpython-36.pyc

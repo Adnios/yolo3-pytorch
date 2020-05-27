@@ -4,6 +4,7 @@ import math
 from collections import OrderedDict
 
 # 基本的darknet块
+
 class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes):
         super(BasicBlock, self).__init__()
@@ -11,13 +12,14 @@ class BasicBlock(nn.Module):
                                stride=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes[0])
         self.relu1 = nn.LeakyReLU(0.1)
-        
+
         self.conv2 = nn.Conv2d(planes[0], planes[1], kernel_size=3,
                                stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes[1])
         self.relu2 = nn.LeakyReLU(0.1)
 
     def forward(self, x):
+        # residual残差边,out为主干边
         residual = x
 
         out = self.conv1(x)
@@ -35,11 +37,14 @@ class BasicBlock(nn.Module):
 class DarkNet(nn.Module):
     def __init__(self, layers):
         super(DarkNet, self).__init__()
+        # 第一次卷积,进行初始化,还没有进行网络的传播,32通道
         self.inplanes = 32
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu1 = nn.LeakyReLU(0.1)
 
+        # 残差块,make_layer
         self.layer1 = self._make_layer([32, 64], layers[0])
         self.layer2 = self._make_layer([64, 128], layers[1])
         self.layer3 = self._make_layer([128, 256], layers[2])
@@ -61,13 +66,14 @@ class DarkNet(nn.Module):
         layers = []
         # 下采样，步长为2，卷积核大小为3
         layers.append(("ds_conv", nn.Conv2d(self.inplanes, planes[1], kernel_size=3,
-                                stride=2, padding=1, bias=False)))
+                                            stride=2, padding=1, bias=False)))
         layers.append(("ds_bn", nn.BatchNorm2d(planes[1])))
         layers.append(("ds_relu", nn.LeakyReLU(0.1)))
-        # 加入darknet模块   
+        # 加入darknet模块
         self.inplanes = planes[1]
-        for i in range(0, blocks):
-            layers.append(("residual_{}".format(i), BasicBlock(self.inplanes, planes)))
+        for i in range(0, blocks):# block代表残差块的个数
+            layers.append(("residual_{}".format(
+                i), BasicBlock(self.inplanes, planes)))
         return nn.Sequential(OrderedDict(layers))
 
     def forward(self, x):
@@ -77,17 +83,20 @@ class DarkNet(nn.Module):
 
         x = self.layer1(x)
         x = self.layer2(x)
+        # 最后三个特征层
         out3 = self.layer3(x)
         out4 = self.layer4(out3)
         out5 = self.layer5(out4)
 
         return out3, out4, out5
 
+
 def darknet53(pretrained, **kwargs):
-    model = DarkNet([1, 2, 8, 8, 4])
+    model = DarkNet([1, 2, 8, 8, 4])# 每组残差块的个数
     if pretrained:
         if isinstance(pretrained, str):
             model.load_state_dict(torch.load(pretrained))
         else:
-            raise Exception("darknet request a pretrained path. got [{}]".format(pretrained))
+            raise Exception(
+                "darknet request a pretrained path. got [{}]".format(pretrained))
     return model

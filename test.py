@@ -1,5 +1,5 @@
 import torch
-from torchsummary import summary
+from torchsummary import summary# 感受野,打印网络结构
 from nets.yolo3 import YoloBody
 from utils.config import Config
 
